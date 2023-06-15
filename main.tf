@@ -15,7 +15,6 @@ provider "aws" {
 
 variable "public_key" {
   type        = string
-  default = "~/.ssh/id_rsa.pub"
   description = "What is your SSH public key?"
 }
 
@@ -59,7 +58,15 @@ resource "aws_instance" "minecraft" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.minecraft.id]
   key_name                    = aws_key_pair.home.key_name
-  user_data                   = "${file("install.sh")}"
+  user_data                   = <<-EOF
+#!/bin/bash
+sudo yum -y update
+sudo yum install java
+wget server.jar ${var.server_link}
+java -Xmx1024M -Xms1024M -jar server.jar nogui
+sed -i 's/eula=false/eula=true/' eula.txt
+java -Xmx1024M -Xms1024M -jar server.jar nogui
+EOF
   tags = {
     Name = "Minecraft Server"
   }
